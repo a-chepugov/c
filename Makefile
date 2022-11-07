@@ -29,7 +29,7 @@ $(BUILD_DIR)/$(BIN) : ${_OBJS} $(SOURCE_DIR)/$(MAIN).c
 	$(CC) $(CFLAGS) $(DEFS) $(LIBS) $(_OBJS) $(SOURCE_DIR)/$(MAIN).c -o $(BUILD_DIR)/$(BIN)
 
 # This rule compiles each module into its object file
-$(_OBJS) : $(OBJS_DIR)/%.o : $(SOURCE_DIR)/%.c $(SOURCE_DIR)/%.h
+$(OBJS_DIR)/%.o : $(SOURCE_DIR)/%.c $(SOURCE_DIR)/%.h
 	@mkdir -p $(OBJS_DIR)
 	$(CC) -c $(CFLAGS) $(DEFS) $< -o $@
 
