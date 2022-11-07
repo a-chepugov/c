@@ -46,3 +46,6 @@ $(patsubst %,preprocessed-%.c,$(MODULES)) preprocessed-$(MAIN).c : preprocessed-
 # Compiled files
 $(patsubst %,compiled-%.o,$(MODULES)) : compiled-%.o : $(OBJS_DIR)/$(BIN)
 	objdump -D $(OBJS_DIR)/$*.o
+
+gdb: $(BUILD_DIR)/$(BIN)
+	gdb $(BUILD_DIR)/$(BIN)
