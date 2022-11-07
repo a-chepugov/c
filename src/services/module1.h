@@ -10,7 +10,7 @@
 #define module1_NOTICE_FLAG   (1<<2)
 
 
-#include "../attributes.h"
+#include "../lib/attributes.h"
 
 /* module1.h -- Types declarations */
 

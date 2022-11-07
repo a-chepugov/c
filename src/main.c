@@ -12,10 +12,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include "NS.h"
+#include "lib/NS.h"
 
 /* Include modules header we directly invoke here: */
-#include "lib/module1.h"
+#include "services/module1.h"
 
 int main(int argc, char **argv)
 {

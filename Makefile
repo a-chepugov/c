@@ -47,9 +47,10 @@ MAIN_FULLNAME := $(SOURCE_DIR)/$(MAIN)
 MAIN_FULLNAME_VARIANTS := $(call syffixes_for,$(MAIN_FULLNAME), .c .cpp .s)
 MAIN_OBJ_FULLNAME := $(call obj_for,$(MAIN))
 
-SOURCES := $(shell find $(SOURCE_DIR) -name '*.cpp' -or -name '*.c' -or -name '*.s')
+ALL_SOURCES := $(shell find $(SOURCE_DIR) -name '*.cpp' -or -name '*.c' -or -name '*.s')
+ALL_SOURCES_BASENAMES := $(foreach item,$(ALL_SOURCES),$(item:$(SOURCE_DIR)/%=%))
 
-MODULES_SOURCES := $(filter-out $(MAIN_FULLNAME_VARIANTS),$(SOURCES))
+MODULES_SOURCES := $(filter-out $(MAIN_FULLNAME_VARIANTS),$(ALL_SOURCES))
 MODULES_SOURCES_BASENAMES := $(foreach item,$(MODULES_SOURCES),$(item:$(SOURCE_DIR)/%=%))
 
 MODULES_OBJ_FULLNAMES := $(foreach item,$(MODULES_SOURCES_BASENAMES), $(call obj_for,$(item)))
@@ -88,12 +89,12 @@ run: $(BIN_FULLNAME)
 ## Debuging
 
 # After macro expanding
-$(patsubst %,preprocessed-%.c,$(MODULES_SOURCES_BASENAMES) $(MAIN)): preprocessed-%.c: $(SOURCE_DIR)/%.c
-	$(CC) -E $(SOURCE_DIR)/$*.c
+$(patsubst %,preprocessed-%,$(ALL_SOURCES_BASENAMES)): preprocessed-%:
+	$(CC) -E $(SOURCE_DIR)/$*
 
 # Read compiled files
-$(patsubst %,compiled-%.o,$(MODULES_SOURCES_BASENAMES)): compiled-%.o : $(OBJS_DIR)/$(BIN)
-	objdump -D $(OBJS_DIR)/$*.o
+$(patsubst $(OBJS_DIR)/%,compiled-%,$(OBJS_FULLNAMES)): compiled-%:
+	objdump -D $(OBJS_DIR)/$*
 
 # run with gdb
 gdb: $(BIN_FULLNAME)

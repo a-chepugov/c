@@ -1,5 +1,5 @@
 /* module1.c -- See module1.h for copyright and info */
-#include "../NS.h"
+#include "../lib/NS.h"
 
 #define NAMESPACE module1
 
