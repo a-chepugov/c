@@ -10,6 +10,7 @@
 #define module1_NOTICE_FLAG   (1<<2)
 
 
+#include "../attributes.h"
 
 /* module1.h -- Types declarations */
 
@@ -22,11 +23,7 @@ enum module1_Direction {
 
 typedef struct module1_Node module1_Node;
 
-extern int module1_counter
-#ifdef module1_IMPORT
-    = -1
-#endif
-    ;
+extern int module1_counter;
 
 extern module1_Node *module1_root;
 

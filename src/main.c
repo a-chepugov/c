@@ -12,19 +12,20 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include "NS.h"
 
 /* Include modules header we directly invoke here: */
-#include "module1.h"
+#include "lib/module1.h"
 
 int main(int argc, char **argv)
 {
-    /* Initialize modules: */
-    module1_initialization();
+	for (int i; i < argc; i++) {
+		printf("%d - %s", i, argv[i]);
+	}
 
-    /* Perform our job. */
+	NS(module1, initialization)();
+	NS(module1, termination)();
+	printf("HELLO\n");
 
-    /* Properly terminate the modules, if required: */
-    module1_termination();
-
-    return 0;
+	return 0;
 }
