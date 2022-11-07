@@ -39,3 +39,6 @@ clean:
 	@if test -d ${OBJS_DIR}; then rm -r  ${OBJS_DIR}; fi
 	@if test -d ${BUILD_DIR}; then rm -r  ${BUILD_DIR}; fi
 
+# After macro expanding
+$(patsubst %,preprocessed-%.c,$(MODULES)) preprocessed-$(MAIN).c : preprocessed-%.c : $(SOURCE_DIR)/%.c
+	$(CC) -E $(SOURCE_DIR)/$*.c
