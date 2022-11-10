@@ -3,8 +3,8 @@ ifeq ($(strip $(ENV)),)
 endif
 
 # Compiler flags: all warnings + debugger meta-data
-CFLAGS = -Wall -Wextra
-LDFLAGS = -Wall -Wextra
+CFLAGS = -std=c17 -Wall -Wextra
+LDFLAGS = -std=c17 -Wall -Wextra
 
 ifeq ($(ENV),development)
 	CFLAGS += -g -fsanitize=address
