@@ -84,7 +84,7 @@ clean:
 rebuild: clean $(BIN_FULLNAME)
 
 run: $(BIN_FULLNAME)
-	$(BIN_FULLNAME)
+	$(BIN_FULLNAME) $(filter-out $@, $(MAKECMDGOALS))
 
 ## Debuging
 
@@ -98,5 +98,5 @@ $(patsubst $(OBJS_DIR)/%,compiled-%,$(OBJS_FULLNAMES)): compiled-%:
 
 # run with gdb
 gdb: $(BIN_FULLNAME)
-	gdb $(BIN_FULLNAME)
+	gdb --args $(BIN_FULLNAME) $(filter-out $@, $(MAKECMDGOALS))
 
