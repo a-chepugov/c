@@ -2,7 +2,7 @@
 #include "../lib/log.h"
 
 void test(int exit_code) {
-	CHECK(1 > 6, " sdfasdssdfs\n ");
+	CHECK(1 > 6, ": invalid condition\n");
 	FUSE(1 > 6, exit_code);
 }
 

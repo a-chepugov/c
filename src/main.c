@@ -15,7 +15,7 @@ int main(int argc, char **argv) {
 	DBG("BYTE_ORDER: %d\n", __BYTE_ORDER__);
 
 
-	for (int i; i < argc; i++) {
+	for (int i = 0; i < argc; i++) {
 		printf("%d: %s\n", i, argv[i]);
 	}
 
