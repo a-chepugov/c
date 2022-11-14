@@ -12,10 +12,12 @@ ifeq ($(ENV),development)
 endif
 
 # Main directories
-SOURCE_DIR := ./src
-
-BUILD_DIR := ./build
-OBJS_DIR := $(BUILD_DIR)/obj
+SOURCES_DIR = src
+TESTS_DIR = tests
+BUILD_DIR = build
+TARGETS_DIR = $(BUILD_DIR)
+SHAREDS_DIR = $(BUILD_DIR)
+OBJECTS_DIR = $(BUILD_DIR)/objects
 
 # External libraries: only math in this example
 LIBS = -lm
@@ -23,80 +25,89 @@ LIBS = -lm
 # Pre-defined macros for conditional compilation
 DEFS = -DDEBUG_FLAG -DEXPERIMENTAL=0
 
-# The final executable program file, i.e. name of our program
-BIN = bin
-
-# Program root file
-MAIN = main
 # Object files from which $BIN depends
-
-define obj_for
-	$(OBJS_DIR)/$(basename ${1}).o
-endef
 
 define mkdir_for
 	@mkdir -p "$(dir ${1})"
 endef
 
-define syffixes_for
-	$(foreach item,${2},$(addsuffix $(item),${1}))
-endef
+ENTRIES = $(wildcard $(SOURCES_DIR)/*.c)
+MODULES = $(wildcard $(SOURCES_DIR)/**/*.c)
+SOURCES = $(ENTRIES) $(MODULES)
+ENTRIES_OBJECTS = $(patsubst $(SOURCES_DIR)/%.c,$(OBJECTS_DIR)/%.o,$(ENTRIES))
+MODULES_OBJECTS = $(patsubst $(SOURCES_DIR)/%.c,$(OBJECTS_DIR)/%.o,$(MODULES))
+OBJECTS = $(ENTRIES_OBJECTS) $(MODULES_OBJECTS)
+TARGETS = $(patsubst $(SOURCES_DIR)/%.c,$(TARGETS_DIR)/%.a,$(ENTRIES))
+SHAREDS = $(patsubst $(SOURCES_DIR)/%.c,$(SHAREDS_DIR)/%.so,$(ENTRIES))
 
+TESTS = $(wildcard $(TESTS_DIR)/*.c, $(TESTS_DIR)/**/*.c)
 
-MAIN_FULLNAME := $(SOURCE_DIR)/$(MAIN)
-MAIN_FULLNAME_VARIANTS := $(call syffixes_for,$(MAIN_FULLNAME), .c .cpp .s)
-MAIN_OBJ_FULLNAME := $(call obj_for,$(MAIN))
-
-ALL_SOURCES := $(shell find $(SOURCE_DIR) -name '*.cpp' -or -name '*.c' -or -name '*.s')
-ALL_SOURCES_BASENAMES := $(foreach item,$(ALL_SOURCES),$(item:$(SOURCE_DIR)/%=%))
-
-MODULES_SOURCES := $(filter-out $(MAIN_FULLNAME_VARIANTS),$(ALL_SOURCES))
-MODULES_SOURCES_BASENAMES := $(foreach item,$(MODULES_SOURCES),$(item:$(SOURCE_DIR)/%=%))
-
-MODULES_OBJ_FULLNAMES := $(foreach item,$(MODULES_SOURCES_BASENAMES), $(call obj_for,$(item)))
-OBJS_FULLNAMES := $(MAIN_OBJ_FULLNAME) $(MODULES_OBJ_FULLNAMES)
-
-BIN_FULLNAME := $(BUILD_DIR)/$(BIN)
+all: echo check $(TARGETS) tests
 
 # Link object files to the executable program
-$(BIN_FULLNAME) : ${OBJS_FULLNAMES} | $(BUILD_DIR)
-	$(CC) $(LDFLAGS) $(DEFS) $(LIBS) $(OBJS_FULLNAMES) -o $(BUILD_DIR)/$(BIN)
+$(TARGETS) : % : $(OBJECTS)
+	@echo build target $@
+	$(call mkdir_for,$@)
+	$(CC) $(LDFLAGS) $(DEFS) $(LIBS) $(OBJECTS) -o $@
 
-# Compiles main object file
-$(MAIN_OBJ_FULLNAME): $(OBJS_DIR)/%.o: $(SOURCE_DIR)/%.c
+# Create shared library
+$(SHAREDS) : % : $(OBJECTS)
+	@echo build shared $@
+	$(call mkdir_for,$@)
+	$(CC) $(LDFLAGS) $(DEFS) $(LIBS) $(OBJECTS) -shared -o $@
+
+# Compiles object files
+$(MODULES_OBJECTS) : $(OBJECTS_DIR)/%.o : $(SOURCES_DIR)/%.c $(SOURCES_DIR)/%.h
+	@echo build object $@ with: $<
 	$(call mkdir_for,$@)
 	$(CC) -c $(CFLAGS) $(DEFS) $< -o $@
 
-# Compiles modules object files
-$(MODULES_OBJ_FULLNAMES): $(OBJS_DIR)/%.o: $(SOURCE_DIR)/%.c $(SOURCE_DIR)/%.h
+# Compiles object files
+$(ENTRIES_OBJECTS) : $(OBJECTS_DIR)/%.o : $(SOURCES_DIR)/%.c
+	@echo build object $@ with: $<
 	$(call mkdir_for,$@)
 	$(CC) -c $(CFLAGS) $(DEFS) $< -o $@
 
-$(BUILD_DIR):
-	@mkdir -p $(BUILD_DIR)
+tests:
+	@echo tests
 
 .PHONY: clean
 
 clean:
-	@if test -d ${OBJS_DIR}; then rm -r ${OBJS_DIR}; fi
-	@if test -d ${BUILD_DIR}; then rm -r ${BUILD_DIR}; fi
+	@if test -d ${SHAREDS_DIR}; then rm -r ${SHAREDS_DIR}; fi;
+	@if test -d ${TARGETS_DIR}; then rm -r ${TARGETS_DIR}; fi;
+	@if test -d ${OBJECTS_DIR}; then rm -r ${OBJECTS_DIR}; fi;
+	@if test -d ${BUILD_DIR}; then rm -r ${BUILD_DIR}; fi;
+	@echo cleaned;
 
-rebuild: clean $(BIN_FULLNAME)
+rebuild: clean all
 
-run: $(BIN_FULLNAME)
-	$(BIN_FULLNAME) $(filter-out $@, $(MAKECMDGOALS))
+$(patsubst %,run-%,$(TARGETS)) : run-% : %
+	@echo run $*
+	$* $(filter-out $@,$(MAKECMDGOALS))
 
 ## Debuging
 
 # After macro expanding
-$(patsubst %,preprocessed-%,$(ALL_SOURCES_BASENAMES)): preprocessed-%:
-	$(CC) -E $(SOURCE_DIR)/$*
+$(patsubst %,preprocessed-%,$(SOURCES)) : preprocessed-% :
+	$(CC) -E $*
 
-# Read compiled files
-$(patsubst $(OBJS_DIR)/%,compiled-%,$(OBJS_FULLNAMES)): compiled-%:
-	objdump -D $(OBJS_DIR)/$*
+# Read object files
+$(patsubst %,compiled-%,$(OBJECTS)) : compiled-%: %
+	objdump -D $*
 
 # run with gdb
-gdb: $(BIN_FULLNAME)
-	gdb --args $(BIN_FULLNAME) $(filter-out $@, $(MAKECMDGOALS))
+$(patsubst %,gdb-%,$(TARGETS)) : gdb-% : %
+	gdb --args $* $(filter-out $@,$(MAKECMDGOALS))
 
+check :
+	@echo Files with potentially dangerous functions
+	@egrep '[^_.>a-zA-Z0-9](str(n?cpy|n?cat|xfrm|n?dup|str|pbrk|tok|_)|stpn?cpy|a?sn?printf|byte_)' $(SOURCES) || true
+
+echo:
+	@echo TESTS: $(TESTS)
+	@echo ENTRIES: $(ENTRIES)
+	@echo MODULES: $(MODULES)
+	@echo OBJECTS: $(OBJECTS)
+	@echo TARGETS: $(TARGETS)
+	@echo  - - - - - - - - - -
