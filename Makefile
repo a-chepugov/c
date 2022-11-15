@@ -7,8 +7,8 @@ CFLAGS = -std=c17 -Wall -Wextra
 LDFLAGS = -std=c17 -Wall -Wextra
 
 ifeq ($(ENV),development)
-	CFLAGS += -g -fsanitize=address
-	LDFLAGS += -g -fsanitize=address -static-libasan
+	CFLAGS += -g
+	LDFLAGS += -g
 endif
 
 # Main directories
@@ -43,6 +43,15 @@ SHAREDS = $(patsubst $(SOURCES_DIR)/%.c,$(SHAREDS_DIR)/%.so,$(ENTRIES))
 TESTS = $(wildcard $(TESTS_DIR)/*.c, $(TESTS_DIR)/**/*.c)
 
 all: echo check $(TARGETS) tests
+
+echo :
+	@echo ENV: $(ENV)
+	@echo TESTS: $(TESTS)
+	@echo ENTRIES: $(ENTRIES)
+	@echo MODULES: $(MODULES)
+	@echo OBJECTS: $(OBJECTS)
+	@echo TARGETS: $(TARGETS)
+	@echo  - - - - - - - - - -
 
 # Link object files to the executable program
 $(TARGETS) : % : $(OBJECTS)
@@ -82,32 +91,37 @@ clean:
 
 rebuild: clean all
 
-$(patsubst %,run-%,$(TARGETS)) : run-% : %
-	@echo run $*
-	$* $(filter-out $@,$(MAKECMDGOALS))
+# Debuging
 
-## Debuging
+## After macro expanding
+$(patsubst $(SOURCES_DIR)/%,preprocessed-%,$(SOURCES)) : preprocessed-% :
+	$(CC) -E $(SOURCES_DIR)/$*
 
-# After macro expanding
-$(patsubst %,preprocessed-%,$(SOURCES)) : preprocessed-% :
-	$(CC) -E $*
+## Read object files
+$(patsubst $(OBJECTS_DIR)/%,compiled-%,$(OBJECTS)) : compiled-%: $(OBJECTS_DIR)/%
+	objdump -D $(OBJECTS_DIR)/$*
 
-# Read object files
-$(patsubst %,compiled-%,$(OBJECTS)) : compiled-%: %
-	objdump -D $*
-
-# run with gdb
-$(patsubst %,gdb-%,$(TARGETS)) : gdb-% : %
-	gdb --args $* $(filter-out $@,$(MAKECMDGOALS))
-
+## Search dangerous functions
 check :
 	@echo Files with potentially dangerous functions
 	@egrep '[^_.>a-zA-Z0-9](str(n?cpy|n?cat|xfrm|n?dup|str|pbrk|tok|_)|stpn?cpy|a?sn?printf|byte_)' $(SOURCES) || true
 
-echo:
-	@echo TESTS: $(TESTS)
-	@echo ENTRIES: $(ENTRIES)
-	@echo MODULES: $(MODULES)
-	@echo OBJECTS: $(OBJECTS)
-	@echo TARGETS: $(TARGETS)
-	@echo  - - - - - - - - - -
+## run
+$(patsubst $(TARGETS_DIR)/%,run-%,$(TARGETS)) : run-% : $(TARGETS_DIR)/%
+	@echo run $*
+	$(TARGETS_DIR)/$* $(filter-out $@,$(MAKECMDGOALS))
+
+## run with gdb
+$(patsubst $(TARGETS_DIR)/%,gdb-%,$(TARGETS)) : gdb-% : $(TARGETS_DIR)/%
+	@echo gdb $*
+	gdb --args $(TARGETS_DIR)/$* $(filter-out $@,$(MAKECMDGOALS))
+
+## run with valgrind
+$(patsubst $(TARGETS_DIR)/%,valgrind-%,$(TARGETS)) : valgrind-% : $(TARGETS_DIR)/%
+	@echo valgrind $*
+	valgrind -s --leak-check=full $(TARGETS_DIR)/$* $(filter-out $@,$(MAKECMDGOALS))
+
+## run with ddd
+$(patsubst $(TARGETS_DIR)/%,ddd-%,$(TARGETS)) : ddd-% : $(TARGETS_DIR)/%
+	@echo ddd $*
+	ddd $(TARGETS_DIR)/$* $(filter-out $@,$(MAKECMDGOALS))
