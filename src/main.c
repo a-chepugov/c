@@ -3,8 +3,8 @@
 #include <stdlib.h>
 #include "lib/NS.h"
 
-#include "services/test.h"
 #include "lib/log.h"
+#include "lib/guards.h"
 
 
 int main(int argc, char **argv) {
@@ -14,11 +14,11 @@ int main(int argc, char **argv) {
 	DBG("INT_WIDTH: %d\n", __INT_WIDTH__);
 	DBG("BYTE_ORDER: %d\n", __BYTE_ORDER__);
 
-
 	for (int i = 0; i < argc; i++) {
 		printf("%d: %s\n", i, argv[i]);
 	}
+	FUSE(argc > 3, EXIT_FAILURE);
 
-	test(9);
-	return 0;
+	return EXIT_SUCCESS;
 }
+
